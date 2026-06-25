@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DevOps Grimoire</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", sans-serif;
+            background: #0b0b1a;
+            color: #fff;
+            text-align: center;
+        }
+
+        .hero {
+            padding: 60px 20px;
+            background: radial-gradient(circle at center, #2a1a4a, #0b0b1a);
+        }
+
+        .hero img {
+            max-width: 600px;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 40px;
+        }
+
+        .card {
+            background: #1a1230;
+            border: 1px solid #6b4eff;
+            border-radius: 12px;
+            padding: 20px;
+            width: 200px;
+            transition: 0.2s;
+            text-decoration: none;
+            color: white;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            background: #24184a;
+        }
+
+        .card h3 {
+            margin-bottom: 8px;
+            color: #c2a8ff;
+        }
+
+        .card p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <img src="{{ url_for('static', filename='img/devops_grimoire.png') }}" />
+</div>
+
+<div class="actions">
+    <a href="{{ url_for('lifecycle_board') }}" class="card">
+        <h3>PLAN</h3>
+        <p>Chart the path</p>
+    </a>
+
+    <a href="{{ url_for('index') }}" class="card">
+        <h3>BUILD</h3>
+        <p>Forge with code</p>
+    </a>
+
+    <a href="{{ url_for('sprint_board') }}" class="card">
+        <h3>DEPLOY</h3>
+        <p>Release the magic</p>
+    </a>
+
+    <a href="{{ url_for('profile') }}" class="card">
+        <h3>MONITOR</h3>
+        <p>Watch over realms</p>
+    </a>
+
+    <a href="{{ url_for('add_task') }}" class="card">
+        <h3>IMPROVE</h3>
+        <p>Learn. Adapt. Evolve.</p>
+    </a>
+</div>
+
+</body>
+</html>

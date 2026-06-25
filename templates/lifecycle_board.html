@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Lifecycle Tracking</h2>
+    <div>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary me-2">Main Board</a>
+        <a href="{{ url_for('sprint_board') }}" class="btn btn-outline-info">Sprint Planning</a>
+    </div>
+</div>
+
+<div class="row flex-nowrap overflow-auto pb-3" style="min-height: 70vh;">
+    
+    {% for stage in lifecycles %}
+    <div class="col-md-3 min-vw-25">
+        <div class="card fantasy-board-card mb-4 h-100" style="border-color: rgba(181, 55, 242, 0.5) !important;">
+            <div class="card-header fantasy-header text-center" style="font-size: 0.9em;">
+                {{ stage }}
+            </div>
+            <div class="card-body p-2 d-flex flex-column gap-2 lifecycle-column" data-lifecycle="{{ stage }}">
+                {% for task in tasks if task.lifecycle_stage == stage %}
+                    {% include 'partials/_task_card.html' %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const tasks = document.querySelectorAll('.fantasy-task-card');
+    const columns = document.querySelectorAll('.lifecycle-column');
+    let draggedTask = null;
+
+    tasks.forEach(task => {
+        task.addEventListener('dragstart', function() {
+            draggedTask = this;
+            setTimeout(() => this.style.opacity = '0.5', 0); 
+        });
+        task.addEventListener('dragend', function() {
+            this.style.opacity = '1';
+            draggedTask = null;
+            columns.forEach(col => col.classList.remove('drag-over'));
+        });
+    });
+
+    columns.forEach(column => {
+        column.addEventListener('dragover', function(e) { e.preventDefault(); });
+        column.addEventListener('dragenter', function(e) {
+            e.preventDefault();
+            this.classList.add('drag-over');
+        });
+        column.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
+        column.addEventListener('drop', function(e) {
+            this.classList.remove('drag-over');
+            if (draggedTask) {
+                this.appendChild(draggedTask);
+                const taskId = draggedTask.getAttribute('data-task-id');
+                const newStage = this.getAttribute('data-lifecycle');
+
+                fetch(`/update_lifecycle/${taskId}`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ lifecycle_stage: newStage })
+                }).then(response => { if (!response.ok) window.location.reload(); })
+                  .catch(error => window.location.reload());
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

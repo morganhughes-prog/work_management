@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Mage Dossier</h2>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Back to Board</a>
+        </div>
+
+        <div class="card fantasy-board-card mb-4 shadow-lg">
+            <div class="card-body p-4">
+                
+                <div class="text-center mb-4">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 100px; height: 100px; background: rgba(181, 55, 242, 0.2); border: 2px solid #b537f2; font-size: 2.5rem; color: #ffd700; font-family: 'Cinzel', serif;">
+                        {{ current_user.username[0] | upper }}
+                    </div>
+                    
+                    <h3 style="color: #fff; font-family: 'Cinzel', serif;">{{ current_user.username }}</h3>
+                    
+                    <div class="mt-2">
+                        {% if current_user.is_admin %}
+                            <span class="badge" style="background: linear-gradient(45deg, #4a00e0, #8e2de2); border: 1px solid #b537f2; font-size: 0.9em; padding: 8px 12px; box-shadow: 0 0 10px rgba(142, 45, 226, 0.4);">
+                                &#9881; Grand Archmage (Admin)
+                            </span>
+                        {% else %}
+                            <span class="badge badge-fantasy" style="font-size: 0.9em; padding: 8px 12px;">
+                                Guild Member (Standard)
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr style="border-color: rgba(181, 55, 242, 0.3);">
+
+                <div class="mt-4">
+                    <h5 style="color: #b537f2; font-family: 'Cinzel', serif;">Grimoire Statistics</h5>
+                    
+                    <ul class="list-group list-group-flush mt-3">
+                        <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0" style="border-bottom: 1px solid rgba(255,255,255,0.05); color: #e0e0e0;">
+                            <span>Active Tasks Authored</span>
+                            <span class="badge badge-fantasy rounded-pill" style="font-size: 1em;">{{ current_user.tasks | length }}</span>
+                        </li>
+                        <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0" style="border-bottom: 1px solid rgba(255,255,255,0.05); color: #e0e0e0;">
+                            <span>Database ID Number</span>
+                            <span class="badge bg-dark rounded-pill border" style="border-color: rgba(255,255,255,0.2) !important;">#{{ current_user.id }}</span>
+                        </li>
+                    </ul>
+                </div>
+                
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,457 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="{% if task %}col-md-7{% else %}col-md-8 mx-auto{% endif %}">
+        <div class="card fantasy-board-card shadow-sm mb-4">
+            <div class="card-header fantasy-header"><h4>{{ action }} Task</h4></div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label>Title</label>
+                        {{ form.title(class="form-control") }}
+                        {% for error in form.title.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label>Description</label>
+                        {{ form.description(class="form-control", rows=4) }}
+                        {% for error in form.description.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label>Task Class</label>
+                            {{ form.work_class_id(class="form-select") }}
+                            {% for error in form.work_class_id.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Status</label>
+                            {{ form.status(class="form-select") }}
+                            {% for error in form.status.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Lifecycle Stage</label>
+                            {{ form.lifecycle_stage(class="form-select") }}
+                            {% for error in form.lifecycle_stage.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Target Sprint</label>
+                            {{ form.sprint_id(class="form-select") }}
+                            {% for error in form.sprint_id.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>Attach File URLs</label>
+                        <div class="d-flex gap-2 mb-2">
+                            <input type="url" id="attachment-url-input" class="form-control" placeholder="https://example.com/document.pdf">
+                            <button type="button" id="add-attachment-btn" class="btn btn-outline-info">Add URL</button>
+                        </div>
+                            <div class="d-flex gap-2 mb-2">
+                                <input type="text" id="attachment-label-input" class="form-control" placeholder="Display name (optional)">
+                            </div>
+                            <div id="attachment-list" class="d-flex flex-wrap gap-2 mb-3"></div>
+                        {{ form.attachment_urls_json() }}
+                        {% for error in form.attachment_urls_json.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {{ form.submit(class="btn btn-primary btn-fantasy") }}
+                    <a href="{{ url_for('index') }}" class="btn btn-link" style="color: #00e5ff;">Return to Board</a>
+                </form>
+            </div>
+        </div>
+
+        {% if task %}
+        <div class="card fantasy-board-card shadow-sm mb-4">
+            <div class="card-header fantasy-header"><h4>File Attachments</h4></div>
+            <div class="card-body">
+                {% if task.attachments %}
+                    <div class="d-grid gap-3">
+                        {% for attachment in task.attachments %}
+                            {% set file_info = get_file_type_info(attachment.url) %}
+                            <div class="card bg-dark border-2" style="border-color: {{ file_info.color }} !important;">
+                                <div class="card-body p-3">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto text-center" style="flex-shrink: 0;">
+                                            <div style="font-size: 2.5em; line-height: 1;">{{ file_info.icon }}</div>
+                                        </div>
+                                        <div class="col" style="min-width: 0;">
+                                            <div class="mb-2">
+                                                <span class="badge" style="background-color: {{ file_info.color }}; font-size: 0.9em;">{{ file_info.label }}</span>
+                                            </div>
+                                            <div style="word-break: break-word;">
+                                                {% if attachment.label %}
+                                                    <p style="color: #00e5ff; cursor: pointer; font-size: 1.1em; margin-bottom: 0.5em;" class="edit-label" data-attachment-id="{{ attachment.id }}" data-task-id="{{ task.id }}">{{ attachment.label }}</p>
+                                                {% else %}
+                                                    <p style="color: #999; cursor: pointer; font-size: 1.1em; margin-bottom: 0.5em; font-style: italic;" class="edit-label" data-attachment-id="{{ attachment.id }}" data-task-id="{{ task.id }}">(Click to add name)</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <a href="{{ attachment.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-light mb-2" style="font-size: 0.95em;">Open</a>
+                                            <form action="{{ url_for('delete_attachment', task_id=task.id, attachment_id=attachment.id) }}" method="POST" class="m-0">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger w-100" style="font-size: 0.95em;">Remove</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-muted" style="font-size: 1.1em;">No attachments yet. Add URLs in the form above.</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if task %}
+    <div class="col-md-5">
+        <div class="card fantasy-board-card shadow-sm mb-4">
+            <div class="card-header fantasy-header d-flex justify-content-between align-items-center">
+                <span>Assigned Party</span>
+            </div>
+            <div class="card-body">
+                
+                <h6 style="color: #b537f2; font-family: 'Cinzel', serif;">Active Members</h6>
+                <ul class="list-group list-group-flush mb-4">
+                    {% for assignment in task.assignments if assignment.is_active %}
+                    <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <span style="color: #fff;">@{{ assignment.user.username }}</span>
+                        <form action="{{ url_for('unassign_user', task_id=task.id, assignment_id=assignment.id) }}" method="POST" class="m-0">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger py-0">Dismiss</button>
+                        </form>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item bg-transparent text-muted px-0">No active members.</li>
+                    {% endfor %}
+                </ul>
+
+                <form action="{{ url_for('assign_user', task_id=task.id) }}" method="POST" class="d-flex gap-2 mb-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select name="user_id" class="form-select form-select-sm" required>
+                        <option value="" disabled selected>Summon Mage...</option>
+                        {% for u in all_users %}
+                            {% set is_active = namespace(value=false) %}
+                            {% for a in task.assignments if a.is_active and a.user_id == u.id %}
+                                {% set is_active.value = true %}
+                            {% endfor %}
+                            {% if not is_active.value %}
+                                <option value="{{ u.id }}">@{{ u.username }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-outline-info">Assign</button>
+                </form>
+
+                <hr style="border-color: rgba(181, 55, 242, 0.3);">
+
+                <h6 style="color: #b537f2; font-family: 'Cinzel', serif;" class="mt-3">Chronicles of Assignment</h6>
+                <div class="overflow-auto" style="max-height: 200px; font-size: 0.85em;">
+                    <ul class="list-unstyled mb-0">
+                        {% for assignment in task.assignments|sort(attribute='assigned_at', reverse=True) %}
+                            <li class="mb-2 p-2 rounded" style="background: rgba(0,0,0,0.2); border-left: 2px solid {% if assignment.is_active %}#00e5ff{% else %}#ff3366{% endif %}; color: #e0e0e0;">
+                                <strong>@{{ assignment.user.username }}</strong> joined<br>
+                                <span class="text-muted">{{ assignment.assigned_at.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+                                {% if not assignment.is_active %}
+                                    <br><span style="color: #ff3366;">Departed: {{ assignment.unassigned_at.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <hr style="border-color: rgba(181, 55, 242, 0.3);">
+
+                <h6 style="color: #b537f2; font-family: 'Cinzel', serif;" class="mt-3">Status Audit Log</h6>
+                {% set logs = task.status_logs|sort(attribute='changed_at', reverse=True) %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Showing latest 5 status changes.</small>
+                    {% if logs|length > 5 %}
+                        <button id="toggle-status-log" type="button" class="btn btn-sm btn-outline-light">Show All</button>
+                    {% endif %}
+                </div>
+                <div class="overflow-auto" style="max-height: 250px; font-size: 0.85em;">
+                    {% if logs %}
+                        <ul class="list-unstyled mb-0" id="status-log-list">
+                            {% for log in logs %}
+                                {% set is_hidden = loop.index0 >= 5 %}
+                                {% if log.new_status == 'RESOLVED' %}
+                                    {% set new_badge = 'badge bg-success' %}
+                                {% elif log.new_status == 'DOING' %}
+                                    {% set new_badge = 'badge bg-info text-dark' %}
+                                {% elif log.new_status == 'BACKLOG' %}
+                                    {% set new_badge = 'badge bg-warning text-dark' %}
+                                {% elif log.new_status == 'TO DO' %}
+                                    {% set new_badge = 'badge bg-primary' %}
+                                {% else %}
+                                    {% set new_badge = 'badge bg-secondary' %}
+                                {% endif %}
+                                {% if log.old_status == 'RESOLVED' %}
+                                    {% set old_badge = 'badge bg-success' %}
+                                {% elif log.old_status == 'DOING' %}
+                                    {% set old_badge = 'badge bg-info text-dark' %}
+                                {% elif log.old_status == 'BACKLOG' %}
+                                    {% set old_badge = 'badge bg-warning text-dark' %}
+                                {% elif log.old_status == 'TO DO' %}
+                                    {% set old_badge = 'badge bg-primary' %}
+                                {% else %}
+                                    {% set old_badge = 'badge bg-secondary' %}
+                                {% endif %}
+                                <li class="mb-2 p-2 rounded status-log-item{% if is_hidden %} d-none{% endif %}" style="background: rgba(0,0,0,0.2); border-left: 2px solid #00e5ff; color: #e0e0e0;" data-hidden="{{ 'true' if is_hidden else 'false' }}">
+                                    <strong>{{ log.changed_by.username }}</strong> changed status<br>
+                                    <span class="{{ old_badge }}">{{ log.old_status }}</span>
+                                    <span class="mx-1 text-white">&rarr;</span>
+                                    <span class="{{ new_badge }}">{{ log.new_status }}</span><br>
+                                    <span class="text-muted">{{ log.changed_at.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="text-muted">No status changes recorded.</div>
+                    {% endif %}
+                </div>
+
+                <hr style="border-color: rgba(181, 55, 242, 0.3);">
+
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% if logs|length > 5 %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleButton = document.getElementById('toggle-status-log');
+        const hiddenItems = document.querySelectorAll('.status-log-item.d-none');
+
+        if (!toggleButton || hiddenItems.length === 0) {
+            return;
+        }
+
+        toggleButton.addEventListener('click', function() {
+            const isExpanded = toggleButton.dataset.expanded === 'true';
+            hiddenItems.forEach(item => {
+                item.classList.toggle('d-none', isExpanded);
+                item.dataset.hidden = String(!isExpanded);
+            });
+
+            toggleButton.textContent = isExpanded ? 'Show All' : 'Show Recent';
+            toggleButton.dataset.expanded = String(!isExpanded);
+        });
+    });
+</script>
+{% endif %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('[DEBUG] DOMContentLoaded fired');
+        const urlInput = document.getElementById('attachment-url-input');
+        const addBtn = document.getElementById('add-attachment-btn');
+        const attachmentList = document.getElementById('attachment-list');
+        const hiddenField = document.querySelector('[name="attachment_urls_json"]');
+        
+        console.log('[DEBUG] Elements found:');
+        console.log('[DEBUG] - urlInput:', urlInput);
+        console.log('[DEBUG] - addBtn:', addBtn);
+        console.log('[DEBUG] - attachmentList:', attachmentList);
+        console.log('[DEBUG] - hiddenField:', hiddenField);
+        
+        let attachmentUrls = [];
+        const labelInput = document.getElementById('attachment-label-input');
+        console.log('[DEBUG] - labelInput:', labelInput);
+        
+        function renderAttachments() {
+            console.log('[DEBUG] renderAttachments called with:', attachmentUrls);
+            attachmentList.innerHTML = '';
+            attachmentUrls.forEach((item, index) => {
+                const badge = document.createElement('div');
+                badge.className = 'badge bg-dark d-flex align-items-center gap-2 px-3 py-2';
+                badge.style.borderLeft = '3px solid #00e5ff';
+                
+                const label = document.createElement('span');
+                label.textContent = item.label || item.url.substring(item.url.lastIndexOf('/') + 1) || 'Attachment';
+                label.style.cursor = 'pointer';
+                label.style.textDecoration = 'underline';
+                label.style.maxWidth = '200px';
+                label.style.overflow = 'hidden';
+                label.style.textOverflow = 'ellipsis';
+                label.title = item.url;
+                label.onclick = () => {
+                    const newLabel = prompt('Edit label:', item.label || '');
+                    if (newLabel !== null) {
+                        item.label = newLabel;
+                        renderAttachments();
+                        updateHiddenField();
+                    }
+                };
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'btn btn-sm btn-close btn-close-white';
+                removeBtn.setAttribute('aria-label', 'Remove');
+                removeBtn.style.padding = '0';
+                removeBtn.onclick = () => {
+                    attachmentUrls.splice(index, 1);
+                    renderAttachments();
+                    updateHiddenField();
+                };
+                
+                badge.appendChild(label);
+                badge.appendChild(removeBtn);
+                attachmentList.appendChild(badge);
+            });
+        }
+        
+        function updateHiddenField() {
+            console.log('[DEBUG] updateHiddenField called');
+            console.log('[DEBUG] Serializing:', attachmentUrls);
+            hiddenField.value = JSON.stringify(attachmentUrls);
+            console.log('[DEBUG] Hidden field value set to:', hiddenField.value);
+        }
+        
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+        
+        addBtn.addEventListener('click', function() {
+            console.log('[DEBUG] Add button clicked');
+            const url = urlInput.value.trim();
+            const label = labelInput.value.trim();
+            console.log('[DEBUG] URL value:', url);
+            console.log('[DEBUG] Label value:', label);
+            console.log('[DEBUG] attachmentUrls array:', attachmentUrls);
+            
+            if (url) {
+                console.log('[DEBUG] URL is not empty, validating...');
+                if (!isValidUrl(url)) {
+                    console.log('[DEBUG] URL validation failed:', url);
+                    alert('Please enter a valid URL');
+                    return;
+                }
+                console.log('[DEBUG] URL validation passed');
+                
+                if (attachmentUrls.some(item => item.url === url)) {
+                    console.log('[DEBUG] URL already exists in list');
+                    alert('This URL is already added');
+                    return;
+                }
+                console.log('[DEBUG] URL is unique, adding to list');
+                attachmentUrls.push({ url: url, label: label });
+                console.log('[DEBUG] attachmentUrls after push:', attachmentUrls);
+                urlInput.value = '';
+                labelInput.value = '';
+                console.log('[DEBUG] Input fields cleared');
+                renderAttachments();
+                updateHiddenField();
+                console.log('[DEBUG] Attachments rendered and hidden field updated');
+            } else {
+                console.log('[DEBUG] URL is empty - no action taken');
+            }
+        });
+        
+        // Allow pressing Enter to add URL
+        urlInput.addEventListener('keypress', function(e) {
+            console.log('[DEBUG] Keypress on urlInput, key:', e.key);
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addBtn.click();
+            }
+        });
+
+        labelInput.addEventListener('keypress', function(e) {
+            console.log('[DEBUG] Keypress on labelInput, key:', e.key);
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addBtn.click();
+            }
+        });
+        
+        console.log('[DEBUG] Event listeners attached successfully');
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const editLabels = document.querySelectorAll('.edit-label');
+        console.log('[DEBUG] Found', editLabels.length, 'edit-label elements');
+        
+        editLabels.forEach(label => {
+            label.addEventListener('click', function(e) {
+                e.preventDefault();
+                const attachmentId = this.getAttribute('data-attachment-id');
+                const taskId = this.getAttribute('data-task-id');
+                const currentLabel = this.textContent.trim();
+                const isPlaceholder = this.textContent.includes('Click to add name') || this.textContent.includes('Click to name');
+                
+                console.log('[DEBUG] Label clicked:');
+                console.log('[DEBUG] - attachmentId:', attachmentId);
+                console.log('[DEBUG] - taskId:', taskId);
+                console.log('[DEBUG] - currentLabel:', currentLabel);
+                console.log('[DEBUG] - isPlaceholder:', isPlaceholder);
+                
+                const newLabel = prompt('Edit attachment label:', isPlaceholder ? '' : currentLabel);
+                console.log('[DEBUG] Prompt result:', newLabel);
+                
+                if (newLabel !== null) {
+                    const url = `/task/${taskId}/attachment/${attachmentId}/label`;
+                    const payload = { label: newLabel };
+                    
+                    console.log('[DEBUG] Sending fetch request:');
+                    console.log('[DEBUG] - URL:', url);
+                    console.log('[DEBUG] - Payload:', payload);
+                    
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name="csrf_token"]').value
+                        },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(response => {
+                        console.log('[DEBUG] Response status:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('[DEBUG] Response data:', data);
+                        if (data.success) {
+                            const displayLabel = data.label || '(Click to add name)';
+                            console.log('[DEBUG] Updating UI with label:', displayLabel);
+                            this.textContent = displayLabel;
+                            if (!data.label) {
+                                this.style.color = '#999';
+                            } else {
+                                this.style.color = '#00e5ff';
+                            }
+                        } else {
+                            console.log('[DEBUG] Error response:', data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.log('[DEBUG] Fetch error:', error);
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

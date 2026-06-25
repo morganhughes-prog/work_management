@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Quest Board</h2>
+    
+    <form class="d-flex align-items-center bg-dark p-2 rounded" style="border: 1px solid rgba(181, 55, 242, 0.4); z-index: 1050; position: relative;" method="GET" action="{{ url_for('index') }}">
+        
+        <div class="me-4 d-flex align-items-center">
+            <label class="me-2 text-white small text-uppercase">Class:</label>
+            
+            <div class="dropdown">
+                <button class="btn btn-sm btn-secondary dropdown-toggle border-0 d-flex justify-content-between align-items-center" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" style="width: 200px;">
+                    <span>
+                        {% if current_class_filters and 'all' not in current_class_filters %}
+                            {{ current_class_filters|length }} Selected
+                        {% else %}
+                            All Classes
+                        {% endif %}
+                    </span>
+                </button>
+                
+                <ul class="dropdown-menu dropdown-menu-dark shadow" style="max-height: 250px; overflow-y: auto; width: 250px;">
+                    
+                    <li class="dropdown-item px-3 py-1" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px !important; margin-bottom: 4px;">
+                        <div class="form-check m-0">
+                            <input class="form-check-input" type="checkbox" name="class_id" value="unclassified" id="classCheckUnclassified" {% if 'unclassified' in current_class_filters %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="classCheckUnclassified" style="cursor: pointer; font-size: 0.9em; font-weight: 700; color: {% if unclassified_count > 0 %}#ff3366{% else %}#00ff9d{% endif %};">
+                                -- Unclassified ({{ unclassified_count }}) --
+                            </label>
+                        </div>
+                    </li>
+
+                    {% for c in work_classes|sort(attribute='full_path') %}
+                    <li class="dropdown-item px-3 py-1">
+                        <div class="form-check m-0">
+                            <input class="form-check-input" type="checkbox" name="class_id" value="{{ c.id }}" id="classCheck{{ c.id }}" {% if c.id|string in current_class_filters %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="classCheck{{ c.id }}" style="cursor: pointer; font-size: 0.9em;" title="{{ c.full_path }}">
+                                {{ c.display_path }}
+                            </label>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="me-2 d-flex align-items-center">
+            <label class="me-2 text-white small text-uppercase">Mages:</label>
+            
+            <div class="dropdown">
+                <button class="btn btn-sm btn-secondary dropdown-toggle border-0 d-flex justify-content-between align-items-center" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" style="width: 180px;">
+                    <span>
+                        {% if current_user_filters and 'all' not in current_user_filters %}
+                            {{ current_user_filters|length }} Selected
+                        {% else %}
+                            All Mages
+                        {% endif %}
+                    </span>
+                </button>
+                
+                <ul class="dropdown-menu dropdown-menu-dark shadow" style="max-height: 250px; overflow-y: auto; width: 180px;">
+                    {% for u in all_users|sort(attribute='username') %}
+                    <li class="dropdown-item px-3 py-1">
+                        <div class="form-check m-0">
+                            <input class="form-check-input" type="checkbox" name="user_id" value="{{ u.id }}" id="userCheck{{ u.id }}" {% if u.id|string in current_user_filters %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="userCheck{{ u.id }}" style="cursor: pointer;">
+                                @{{ u.username }}
+                            </label>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-sm btn-primary btn-fantasy ms-2">Apply Filters</button>
+
+        {% if current_class_filters and 'all' not in current_class_filters or current_user_filters and 'all' not in current_user_filters %}
+            <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-danger ms-2 py-1 px-2" title="Clear Filters">X</a>
+        {% endif %}
+    </form>
+
+    <div>
+        <a href="{{ url_for('sprint_board') }}" class="btn btn-outline-info me-2">Sprints</a>
+        <a href="{{ url_for('lifecycle_board') }}" class="btn btn-outline-secondary me-2">Lifecycle</a>
+        <a href="{{ url_for('add_task') }}" class="btn btn-primary btn-fantasy">+ Scribe New Task</a>
+    </div>
+    
+</div>
+
+<div class="row flex-nowrap overflow-auto pb-3" style="min-height: 70vh;">
+    {% for status in statuses %}
+    <div class="col-md-3 min-vw-25">
+        <div class="card fantasy-board-card mb-4 h-100">
+            <div class="card-header fantasy-header text-center">
+                {{ status }}
+            </div>
+            <div class="card-body p-2 d-flex flex-column gap-2 status-column" data-status="{{ status }}">
+                {% for task in tasks if task.status == status %}
+                    {% include 'partials/_task_card.html' %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const tasks = document.querySelectorAll('.fantasy-task-card');
+    const columns = document.querySelectorAll('.status-column');
+    let draggedTask = null;
+
+    tasks.forEach(task => {
+        task.addEventListener('dragstart', function() {
+            draggedTask = this;
+            setTimeout(() => this.style.opacity = '0.5', 0); 
+        });
+        task.addEventListener('dragend', function() {
+            this.style.opacity = '1';
+            draggedTask = null;
+            columns.forEach(col => col.classList.remove('drag-over'));
+        });
+    });
+
+    columns.forEach(column => {
+        column.addEventListener('dragover', function(e) { e.preventDefault(); });
+        column.addEventListener('dragenter', function(e) {
+            e.preventDefault();
+            this.classList.add('drag-over');
+        });
+        column.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
+        column.addEventListener('drop', function(e) {
+            this.classList.remove('drag-over');
+            if (draggedTask) {
+                this.appendChild(draggedTask);
+                const taskId = draggedTask.getAttribute('data-task-id');
+                const newStatus = this.getAttribute('data-status');
+
+                fetch(`/update_status/${taskId}`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                })
+                .then(response => {
+                    if (!response.ok) { window.location.reload(); }
+                })
+                .catch(error => window.location.reload());
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
